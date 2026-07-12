@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Radio PSJ - Radio online comunitaria con música independiente, cultura y noticias locales. Escúchanos en vivo 24/7.">
+    <meta name="keywords" content="radio, música, streaming, comunidad, noticias, cultura, independiente">
+    <meta name="author" content="Radio PSJ">
+    <title>Radio PSJ - Radio Online del Colegio Patrocinio de San José</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <a href="/">
+                    <img src="/assets/logo.png" alt="Radio PSJ">
+                </a>
+            </div>
+            <nav class="main-nav" id="mainNav">
+                <ul>
+                    <li><a href="#" data-section="inicio" class="active">Radio</a></li>
+                    <li><a href="#" data-section="programacion">Programas</a></li>
+                    <li><a href="#" data-section="noticias">Noticias</a></li>
+                    <!-- <li><a href="#" data-section="productos">Productos</a></li> -->
+                </ul>
+            </nav>
+            <div class="social-header">
+                <a href="https://www.instagram.com/radiosalesianapsj/" target="_blank" aria-label="Instagram"><i
+                        class="fab fa-instagram"></i> </a>
+                <a href="https://www.youtube.com/@radiopsj" target="_blank" aria-label="YouTube"><i
+                        class="fab fa-youtube"></i> </a>
+                <a href="https://www.x.com/radiopsj" target="_blank" aria-label="Twitter"><i class="fab fa-twitter"></i>
+                    </a>
+                <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- BARRA INFORMATIVA -->
+        <div id="signal-bar" class="signal-bar">
+            <div class="signal-label">
+                INFO >
+            </div>
+            <div class="signal-content">
+                <div id="signal-track" class="signal-track">
+                </div>
+            </div>
+            <div class="signal-datetime">
+                <span class="signal-date">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span id="current-date"></span>
+                </span>
+
+                <span class="signal-time">
+                    <i class="fas fa-clock"></i>
+                    <span id="current-time"></span>
+                </span>
+            </div>
+        </div>
+
+        <!-- VISTA: INICIO -->
+        <section id="inicio" class="hero-section view-section active">
+            <div class="hero-bg-overlay"></div>
+            <div class="hero-content">
+                <div class="hero-image">
+                    <img src="assets/insignia.png" alt="Insignia" class="insignia">
+                </div>
+                <div class="hero-text">
+                    <h1>PSJ Radio</h1>
+                    <p>La frecuencia de la comunidad de estudiantes del Colegio Patrocinio de San José.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección TV -->
+
+        <div class="cstrEmbed" data-type="newStreamPlayer" data-publicToken="1a08a90c-f89c-46d1-b594-16c007b46338"
+            data-theme="dark" data-color="1E2C78" data-channelId="" data-rendered="false">
+            <a href="https://www.caster.fm">Shoutcast Hosting</a> <a href="https://www.caster.fm">Stream Hosting</a> <a
+                href="https://www.caster.fm">Radio Server Hosting</a>
+        </div>
+        <script src="//cdn.cloud.caster.fm//widgets/embed.js"></script>
+
+        <!-- Sección Widgets Datos Publicos -->
+
+
+        <!-- Sección Explora (solo visible en inicio) -->
+        <section class="explore-section view-section" id="explora">
+            <div class="section-container">
+                <div class="explore-grid">
+
+                    <a href="#" data-section="programacion" class="explore-card">
+                        <div class="explore-card-top">
+                            <div>
+                                <h3>Programación</h3>
+                                <p>Conoce nuestra parrilla</p>
+                            </div>
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="explore-card-bottom">
+                            <span class="card-label">AL AIRE</span>
+                            <div id="explore-onair">
+                                <strong>Cargando...</strong>
+                            </div>
+                            <div id="explore-onair-time" class="explore-card-time"></div>
+                            <p id="explore-onair-desc" class="explore-card-desc"></p>
+                        </div>
+                    </a>
+
+                    <a href="#" data-section="noticias" class="explore-card">
+                        <div class="explore-card-top">
+                            <div>
+                                <h3>Noticias</h3>
+                                <p>Mantente informado</p>
+                            </div>
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="explore-card-bottom">
+                            <span class="card-label">ÚLTIMA NOTICIA</span>
+                            <img id="explore-news-image" class="explore-thumb" src="assets/default-news.jpg"
+                                alt="Noticia">
+                            <div id="explore-news-title">
+                                Cargando...
+                            </div>
+                        </div>
+                    </a>
+
+
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Sobre Radio (solo visible en inicio) -->
+        <section class="about-section view-section" id="sobre-radio">
+            <div class="section-container">
+                <div class="about-grid">
+                    <div class="about-text">
+                        <h2>Sobre Nuestra Radio</h2>
+                        <hr class="divider">
+                        <p>Radio PSJ, la emisora oficial del Patrocinio de San José, una propuesta hecha por estudiantes
+                            para el Colegio. Te acompañamos con toda la información clave de nuestra comunidad
+                            educativa, anuncios del día a día y una selección musical diversa para todos los gustos.</p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA: PROGRAMAS -->
+        <section id="programacion" class="schedule-section view-section">
+            <div class="section-container">
+
+                <h2 class="section-title">Programas</h2>
+                <p class="section-subtitle">Conoce nuestra parrilla de programación y horarios</p>
+
+                <div class="schedule-grid">
+                    <!-- Programas cargados dinámicamente -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA: NOTICIAS newsGrid-->
+        <section id="noticias" class="news-section view-section">
+            <div class="section-container">
+
+                <h2 class="section-title">Últimas Noticias</h2>
+                <p class="section-subtitle">Mantente informado</p>
+
+                <div id="newsGrid" class="news-grid">
+                    <!-- Las noticias se cargarán dinámicamente aquí -->
+                </div>
+
+                <div id="news-pagination" class="pagination-container">
+                    <!-- Paginación se genera dinámicamente -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA: DETALLE NOTICIA -->
+        <section id="noticia-detalle" class="news-detail-section view-section">
+            <div class="section-container" style="padding: 60px 20px;">
+                <div id="article-root">
+                    <!-- El contenido de la noticia se carga dinámicamente -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECCION: ANUNCIOS -->
+        <section class="ads-section" id="ads-section">
+            <div class="section-container">
+                <div class="ads-header">
+                    <span class="pulse-indicator"></span>
+                    <h2 class="section-subtitle">Avisos</h2>
+                </div>
+
+                <div class="explore-grid" id="ads-container">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Widget Flotante de Radio -->
+
+    <!-- FOOTER -->
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <img src="assets/logo.png" alt="Logo footer" class="footer-logo">
+                <p>Bellavista 0550, Providencia, RM.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Navegación</h4>
+                <ul>
+                    <li><a href="#" data-section="inicio">Radio</a></li>
+                    <li><a href="#" data-section="programacion">Programas</a></li>
+                    <li><a href="#" data-section="noticias">Noticias</a></li>
+                    <!-- <li><a href="#" data-section="productos">Productos</a></li> -->
+                </ul>
+            </div>
+            <div class="footer-social">
+                <h4>Nuestras redes</h4>
+                <div class="social-icons">
+                    <a href="https://www.instagram.com/radiosalesianapsj/" target="_blank" aria-label="Instagram"><i
+                            class="fab fa-instagram"></i> Instagram</a>
+                    <a href="https://www.youtube.com/@radiopsj" target="_blank" aria-label="YouTube"><i
+                            class="fab fa-youtube"></i> YouTube</a>
+                    <a href="https://www.x.com/radiopsj" target="_blank" aria-label="Twitter"><i
+                            class="fab fa-twitter"></i> Twitter</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Colegio Salesiano Patrocinio de San José.</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>
