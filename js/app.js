@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         mensajes.push({
             tipo: "TV",
-            texto: "Neptuno TV transmite en vivo"
+            texto: "RADIO PSJ Transmite ahora"
         });
 
         const contenidoHTML = mensajes.map(msg => `
@@ -644,9 +644,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!anuncios || anuncios.length === 0) {
             container.innerHTML = `
                 <div class="ad-empty-state">
-                    <h3>¿Quieres anunciarte en Radio Neptuno?</h3>
-                    <p>Apoya nuestra señal independiente y llega a toda la comunidad local.</p>
-                    <a href="mailto:avisoslegalesneptuno@gmail.com" class="btn-ad-dynamic">Escríbenos Hoy</a>
+                    <h3>Anuncios proximamente</h3>
+                    <p>Apoyamos a toda la comunidad.</p>
                 </div>
             `;
             return;
@@ -925,32 +924,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainNav = document.getElementById('mainNav');
     const audio = document.getElementById('zenoAudio');
 
-    const radioWidget = document.getElementById('radio-widget');
-    const widgetExpandBtn = document.getElementById('widgetExpandBtn');
-    const widgetCollapseBtn = document.getElementById('widgetCollapseBtn');
-    const widgetPlayBtn = document.getElementById('widgetPlayBtn');
-    const widgetPlayIcon = document.getElementById('widgetPlayIcon');
-    const widgetVolumeSlider = document.getElementById('widgetVolumeSlider');
-    const widgetMuteBtn = document.getElementById('widgetMuteBtn');
-    const widgetVolumeIcon = document.getElementById('widgetVolumeIcon');
-    const widgetMiniStatus = document.getElementById('widgetMiniStatus');
-    const widgetLiveBadge = document.getElementById('widgetLiveBadge');
-
-    const widgetTrackTitle = document.getElementById('widgetTrackTitle');
-    const widgetTrackArtist = document.getElementById('widgetTrackArtist');
-    const widgetCover = document.getElementById('widgetCover');
-    const widgetDefaultIcon = document.getElementById('widgetDefaultIcon');
-
-    let isPlaying = false;
-    let isMuted = false;
-    let lastVolume = 0.8;
-    let metadataTimer = null;
-
-    if (audio) {
-        audio.src = ZENO_CONFIG.streamUrl;
-        audio.volume = lastVolume;
-    }
-
     if (menuToggle && mainNav) {
         menuToggle.addEventListener('click', () => {
             mainNav.classList.toggle('open');
@@ -973,171 +946,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (widgetExpandBtn && radioWidget) {
-        widgetExpandBtn.addEventListener('click', () => {
-            radioWidget.classList.remove('widget-minimized');
-            radioWidget.classList.add('widget-expanded');
-        });
-    }
-
-    if (widgetCollapseBtn && radioWidget) {
-        widgetCollapseBtn.addEventListener('click', () => {
-            radioWidget.classList.remove('widget-expanded');
-            radioWidget.classList.add('widget-minimized');
-        });
-    }
-
-    function alternarReproduccion() {
-        if (!audio) return;
-        if (!isPlaying) {
-            if (widgetMiniStatus) widgetMiniStatus.textContent = "CONECTANDO...";
-            audio.play()
-                .then(() => {
-                    isPlaying = true;
-                    if (widgetPlayIcon) widgetPlayIcon.classList.replace('fa-play', 'fa-pause');
-                    if (widgetMiniStatus) widgetMiniStatus.textContent = "ON";
-                    if (widgetLiveBadge) widgetLiveBadge.style.display = 'inline-block';
-
-                    fetchZenoMetadata();
-                    metadataTimer = setInterval(fetchZenoMetadata, ZENO_CONFIG.updateInterval);
-                })
-                .catch(error => {
-                    console.error("Error al reproducir el stream:", error);
-                    if (widgetMiniStatus) widgetMiniStatus.textContent = "ERROR";
-                });
-        } else {
-            audio.pause();
-            audio.load();
-            isPlaying = false;
-            if (widgetPlayIcon) widgetPlayIcon.classList.replace('fa-pause', 'fa-play');
-            if (widgetMiniStatus) widgetMiniStatus.textContent = "OFF";
-            if (widgetLiveBadge) widgetLiveBadge.style.display = 'none';
-
-            clearInterval(metadataTimer);
-            resetMetadataUI();
-        }
-    }
-
-    if (widgetPlayBtn) widgetPlayBtn.addEventListener('click', alternarReproduccion);
-
-    const ctaEscucharAhora = document.getElementById('ctaEscucharAhora');
-    if (ctaEscucharAhora && radioWidget) {
-        ctaEscucharAhora.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (radioWidget.classList.contains('widget-minimized')) {
-                radioWidget.classList.remove('widget-minimized');
-                radioWidget.classList.add('widget-expanded');
-            }
-            if (!isPlaying) alternarReproduccion();
-        });
-    }
-
-    if (widgetVolumeSlider) {
-        widgetVolumeSlider.addEventListener('input', (e) => {
-            if (!audio) return;
-            audio.volume = e.target.value;
-            lastVolume = e.target.value;
-            isMuted = (e.target.value == 0);
-            updateVolumeIcon();
-        });
-    }
-
-    if (widgetMuteBtn) {
-        widgetMuteBtn.addEventListener('click', () => {
-            if (!audio) return;
-            if (isMuted) {
-                audio.volume = lastVolume > 0 ? lastVolume : 0.8;
-                if (widgetVolumeSlider) widgetVolumeSlider.value = audio.volume;
-                isMuted = false;
-            } else {
-                lastVolume = audio.volume;
-                audio.volume = 0;
-                if (widgetVolumeSlider) widgetVolumeSlider.value = 0;
-                isMuted = true;
-            }
-            updateVolumeIcon();
-        });
-    }
-
-    function updateVolumeIcon() {
-        if (!widgetVolumeIcon || !audio) return;
-        widgetVolumeIcon.className = 'fas';
-        if (isMuted || audio.volume === 0) {
-            widgetVolumeIcon.classList.add('fa-volume-mute');
-        } else if (audio.volume < 0.5) {
-            widgetVolumeIcon.classList.add('fa-volume-down');
-        } else {
-            widgetVolumeIcon.classList.add('fa-volume-up');
-        }
-    }
-
-    if (audio) {
-        audio.addEventListener('waiting', () => { if (isPlaying && widgetMiniStatus) widgetMiniStatus.textContent = "SINC..."; });
-        audio.addEventListener('playing', () => { if (isPlaying && widgetMiniStatus) widgetMiniStatus.textContent = "ON"; });
-        audio.addEventListener('error', () => { if (widgetMiniStatus) widgetMiniStatus.textContent = "ERROR"; });
-    }
-
-    // ==========================================
-    // EXTRAER METADATOS DE TRANSMISIÓN
-    // ==========================================
-    function fetchZenoMetadata() {
-        if (!ZENO_CONFIG.stationId || ZENO_CONFIG.stationId === "") return;
-        const zenoApiUrl = `https://api.zeno.fm/public/v2/store/station/${ZENO_CONFIG.stationId}/current-track`;
-
-        fetch(zenoApiUrl)
-            .then(res => { if (!res.ok) throw new Error(); return res.json(); })
-            .then(data => {
-                if (data && (data.title || data.artist)) {
-                    const songTitle = data.title || "Radio Neptuno";
-                    const songArtist = data.artist || "Señal Online";
-
-                    if (widgetTrackTitle && (widgetTrackTitle.textContent !== songTitle || widgetTrackArtist.textContent !== songArtist)) {
-                        widgetTrackTitle.textContent = songTitle;
-                        if (widgetTrackArtist) widgetTrackArtist.textContent = songArtist;
-                        fetchAlbumArt(songArtist, songTitle);
-                    }
-                }
-            })
-            .catch(() => console.warn("Metadatos Zeno no disponibles de forma temporal."));
-    }
-
-    function fetchAlbumArt(artist, title) {
-        const query = encodeURIComponent(`${artist} ${title}`);
-        const deezerUrl = `https://api.deezer.com/search?q=${query}&limit=1&output=jsonp`;
-        const scriptId = 'deezer_jsonp_callback';
-        const oldScript = document.getElementById(scriptId);
-        if (oldScript) oldScript.remove();
-
-        window.deezerCallback = (data) => {
-            if (data && data.data && data.data.length > 0) {
-                displayCover(data.data[0].album.cover_medium);
-            } else {
-                displayDefaultIcon();
-            }
-            delete window.deezerCallback;
-        };
-
-        const script = document.createElement('script');
-        script.id = scriptId;
-        script.src = `${deezerUrl}&callback=deezerCallback`;
-        document.body.appendChild(script);
-    }
-
-    function displayCover(url) {
-        if (widgetCover) { widgetCover.src = url; widgetCover.style.display = 'block'; }
-        if (widgetDefaultIcon) widgetDefaultIcon.style.display = 'none';
-    }
-
-    function displayDefaultIcon() {
-        if (widgetCover) widgetCover.style.display = 'none';
-        if (widgetDefaultIcon) widgetDefaultIcon.style.display = 'block';
-    }
-
-    function resetMetadataUI() {
-        if (widgetTrackTitle) widgetTrackTitle.textContent = "Radio Neptuno";
-        if (widgetTrackArtist) widgetTrackArtist.textContent = "Señal Online";
-        displayDefaultIcon();
-    }
 
     // DISPARO INICIAL INTEGRAL
     initData();
