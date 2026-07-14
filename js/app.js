@@ -5,14 +5,11 @@ if (typeof window.API_URL === 'undefined') {
     window.API_URL = 'https://script.google.com/macros/s/AKfycbzf2lQP_D3zWdRwBgYp8r6zzvaFO7rTKFwOEuOg5XZEHMwAkZhRkyoYKYOCcT4q4vUA/exec';
 }
 
-// Estados globales definidos de manera segura en el objeto window si no existen
+// Estados globales definidos de manera segura (Solo mantenemos lo dinámico: noticias y anuncios)
 window.appData = window.appData || {
     noticias: [],
-    programas: [],
-    programacion: [],
     informativos: [],
     anuncios: [],
-    tv: null,
     ranking: []
 };
 
@@ -21,29 +18,18 @@ window.allNews = window.allNews || [];
 let currentSection = 'inicio';
 let currentArticleId = null;
 
-let programasData = [];
-let programacionData = [];
-let scheduleData = [];
-
 let currentNewsPage = 1;
 const newsPerPage = 10;
-
-const ZENO_CONFIG = {
-    streamUrl: "https://stream.zeno.fm/lqnwrpclo7hvv",
-    stationId: "lqnwrpclo7hvv",
-    updateInterval: 15000
-};
 
 // =========================================================================
 // ARRANQUE DE LA APLICACIÓN (DOM fully loaded)
 // =========================================================================
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Usamos una constante interna local para no colisionar con scripts externos
     const LOCAL_API_URL = window.API_URL;
 
     // ---------------------------------------------------------------------
-    // 1. FUNCIÓN DE PRECARGA UNIFICADA DEFINITIVA
+    // 1. FUNCIÓN DE PRECARGA UNIFICADA (Optimizada para Noticias y Anuncios)
     // ---------------------------------------------------------------------
     async function preloadData() {
         try {
@@ -57,44 +43,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error("La respuesta del servidor no es válida");
             }
 
-            // Poblamos el pool de memoria global
+            // Poblamos el pool de memoria global únicamente con los datos dinámicos requeridos
             window.appData.noticias = data.noticias || [];
-            window.appData.programas = data.programas || [];
-            window.appData.programacion = data.programacion || [];
             window.appData.informativos = data.informativos || [];
             window.appData.anuncios = data.anuncios || [];
-            window.appData.tv = data.tv || null;
             window.appData.ranking = data.top10 || [];
 
-            // Sincronizamos variables locales críticas para renderizados y grillas
+            // Sincronizamos variables locales críticas para noticias
             window.allNews = data.noticias || [];
-            scheduleData = window.appData.programacion;
-            programasData = data.programas || [];
-            programacionData = data.programacion || [];
 
-            // Dejamos la copia fresca en LocalStorage para blindar a sonando.js
+            // Dejamos la copia fresca en LocalStorage
             localStorage.setItem('sonando_cache', JSON.stringify({
                 top10: data.top10 || [],
                 nuevos: data.nuevos || []
             }));
             localStorage.setItem('sonando_cache_time', Date.now().toString());
 
-            console.log("✅ Datos unificados sincronizados con éxito.");
+            console.log("✅ Datos dinámicos unificados sincronizados con éxito.");
 
-            // 1. Procesamos el acoplamiento relacional de la grilla horaria inmediatamente
-            mergeScheduleData();
-
-            // 2. Renderizamos visualmente todos los componentes pasivos en la portada
+            // 1. Renderizamos visualmente componentes dinámicos en la portada
             initInformativos();
             renderAnuncios();
-            renderNeptunoTV();
-            renderSchedule();
-
-            // 3. Forzar actualización de widgets en tiempo real con la data cargada
-            updateLiveSchedule();
             updateSonandoWidget(); // Carga la data del widget de ranking musical
 
-            // 4. Carga de la data de resumen en la sección "Explora" de inicio
+            // 2. Procesamos el estado horario actual utilizando la grilla estática del HTML
+            updateLiveSchedule();
+
+            // 3. Carga de la data de resumen en la sección "Explora" de inicio
             const elNewsTitle = document.getElementById("explore-news-title");
             const elNewsImg = document.getElementById("explore-news-image");
             if (window.appData.noticias.length > 0) {
@@ -102,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (elNewsTitle) elNewsTitle.textContent = ultimaNoticia.titulo;
                 if (elNewsImg && ultimaNoticia.imagen) {
-                    // 🌟 DETECCIÓN INTELIGENTE DE URL PARA EL WIDGET EXPLORA
                     elNewsImg.src = /^https?:\/\//i.test(ultimaNoticia.imagen) ? ultimaNoticia.imagen : `assets/noticias/${ultimaNoticia.imagen}`;
                 }
             }
@@ -115,14 +89,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("❌ Error en la precarga unificada:", error);
 
-            // Fallback de emergencia: levantar el último localStorage guardado
+            // Fallback de emergencia
             const backup = localStorage.getItem('sonando_cache');
             if (backup) {
                 const cached = JSON.parse(backup);
                 window.appData.ranking = cached.top10 || [];
                 console.warn("⚠️ Operando con datos locales de emergencia desde caché.");
-
-                // Intentar renderizar lo básico con caché
                 updateSonandoWidget();
             }
         }
@@ -130,23 +102,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inicializador Maestro que coordina el arranque, estados de vista y temporizadores
     async function initData() {
-        // RETOMADO: Asegurar que al arrancar en frío se muestre el Inicio completo con sus bloques activos
         showSection('inicio');
 
-        // Ejecutar la descarga masiva de datos de la API
+        // Ejecutar la descarga masiva de datos dinámicos de la API
         await preloadData();
 
         // Renderizar la lista de noticias latente
         renderNewsList();
 
-        // Temporizadores en segundo plano
-        setInterval(updateLiveSchedule, 60000);
-        setInterval(refreshBarraYTvTiempoReal, 60000);
+        // Temporizadores en segundo plano (refrescos de reloj y control de grilla horaria)
+        setInterval(updateLiveSchedule, 30000); // Chequea horario de programas estáticos cada 30 segundos
+        setInterval(refreshBarraTiempoReal, 60000);
         setInterval(refreshNoticiasTiempoReal, 300000);
     }
 
     // ---------------------------------------------------------------------
-    // 2. SISTEMA DE NAVEGACIÓN SPA Y SECCIONES (RETOMADO Y COMPLETO)
+    // 2. SISTEMA DE NAVEGACIÓN SPA Y SECCIONES
     // ---------------------------------------------------------------------
     function showSection(sectionId, articleId = null) {
         document.querySelectorAll('.view-section').forEach(section => {
@@ -162,22 +133,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Bloques subordinados del Inicio que deben prenderse y apagarse coordinadamente
         const aboutSection = document.getElementById('sobre-radio');
         const exploreSection = document.getElementById('explora');
-        const tvSection = document.getElementById('neptuno-tv');
         const adsSection = document.getElementById('ads-section');
-        const widgetsSection = document.getElementById('datos-widgets');
 
         if (sectionId === 'inicio') {
             if (aboutSection) aboutSection.classList.add('active');
             if (exploreSection) exploreSection.classList.add('active');
-            if (tvSection) tvSection.classList.add('active');
             if (adsSection) adsSection.classList.add('active');
-            if (widgetsSection) widgetsSection.classList.add('active');
         } else {
             if (aboutSection) aboutSection.classList.remove('active');
             if (exploreSection) exploreSection.classList.remove('active');
-            if (tvSection) tvSection.classList.remove('active');
             if (adsSection) adsSection.classList.remove('active');
-            if (widgetsSection) widgetsSection.classList.remove('active');
         }
 
         updateNavActive(sectionId);
@@ -218,10 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const sectionId = link.getAttribute('data-section');
             showSection(sectionId);
-
-            if (sectionId === 'sonando' && typeof loadSonando === 'function') {
-                loadSonando();
-            }
         });
     });
 
@@ -238,10 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const sectionId = link.getAttribute('data-section');
             showSection(sectionId);
-
-            if (sectionId === 'sonando' && typeof loadSonando === 'function') {
-                loadSonando();
-            }
         });
     });
 
@@ -263,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---------------------------------------------------------------------
-    // 3. REFRESH DE DATA EN SEGUNDO PLANO
+    // 3. REFRESH DE DATA EN SEGUNDO PLANO (Solo Noticias e Informativos)
     // ---------------------------------------------------------------------
     async function refreshNoticiasTiempoReal() {
         try {
@@ -274,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success && data.noticias) {
                 window.appData.noticias = data.noticias;
                 window.allNews = data.noticias;
-                console.log("📰 Noticias actualizadas en tiempo real desde Sheets");
+                console.log("📰 Noticias actualizadas en tiempo real.");
 
                 if (currentSection === 'noticias') {
                     renderNewsList();
@@ -285,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function refreshBarraYTvTiempoReal() {
+    async function refreshBarraTiempoReal() {
         try {
             const cacheBuster = new Date().getTime();
 
@@ -294,14 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dataInfo.success && dataInfo.informativos) {
                 window.appData.informativos = dataInfo.informativos;
                 initInformativos();
-            }
-
-            const resTv = await fetch(`${LOCAL_API_URL}?action=tv&_cb=${cacheBuster}`);
-            const dataTv = await resTv.json();
-            if (dataTv.success && dataTv.tv) {
-                window.appData.tv = dataTv.tv;
-                renderNeptunoTV();
-                console.log("📺 Estado de la TV verificado");
+                console.log("🔔 Barra informativa actualizada.");
             }
         } catch (error) {
             console.error("Error al refrescar barra de información:", error);
@@ -317,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let mensajes = [];
 
+        // Mensajes dinámicos cargados desde el sheet
         const informativos = window.appData.informativos.filter(item => item.activo === true);
         informativos.forEach(item => {
             if (item.texto) {
@@ -335,25 +286,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        const actual = getCurrentProgram();
+        // Obtener programas desde los elementos estáticos de la vista HTML
+        const actual = getCurrentProgramFromHTML();
         if (actual) {
             mensajes.unshift({
                 tipo: "AL AIRE",
-                texto: actual.nombre || actual.programa
+                texto: actual.nombre
             });
         }
 
-        const siguiente = getNextProgram();
+        const siguiente = getNextProgramFromHTML();
         if (siguiente) {
             mensajes.push({
                 tipo: "SIGUE",
-                texto: siguiente.nombre || siguiente.programa
+                texto: siguiente.nombre
             });
         }
 
         mensajes.push({
-            tipo: "TV",
-            texto: "RADIO PSJ Transmite ahora"
+            tipo: "WEB",
+            texto: "RADIO PSJ Transmite online "
         });
 
         const contenidoHTML = mensajes.map(msg => `
@@ -387,32 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateDateTime, 1000);
 
     // ==========================================
-    // VISTA NEPTUNO TV
-    // ==========================================
-    function renderNeptunoTV() {
-        const container = document.querySelector("#tv-player-container");
-        if (!container) return;
-
-        const tvConfig = window.appData.tv;
-
-        if (!tvConfig) {
-            container.innerHTML = `<video autoplay loop muted playsinline><source src="assets/tv-loop.mp4" type="video/mp4"></video>`;
-            return;
-        }
-
-        if (tvConfig.activo && tvConfig.url_stream) {
-            container.innerHTML = `<iframe src="${tvConfig.url_stream}" allowfullscreen></iframe>`;
-        } else {
-            const videoSrc = tvConfig.url_loop || "assets/tv-loop.mp4";
-            container.innerHTML = `
-                <video autoplay loop muted playsinline>
-                    <source src="${videoSrc}" type="video/mp4">
-                </video>
-            `;
-        }
-    }
-
-    // ==========================================
     // SISTEMA DE NOTICIAS CON PAGINACIÓN
     // ==========================================
     function renderNewsList() {
@@ -432,14 +358,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const noticiasPagina = window.allNews.slice(startIndex, endIndex);
 
         newsGrid.innerHTML = noticiasPagina.map(news => {
-            // 🌟 DETECCIÓN INTELIGENTE DE URL PARA EL BACKGROUND-IMAGE
             let rutaImagen = "";
             if (news.imagen) {
                 rutaImagen = /^https?:\/\//i.test(news.imagen) ? news.imagen : `assets/noticias/${news.imagen}`;
             }
 
             const bgStyle = news.imagen ? `style="background-image: url('${rutaImagen}'); background-size: cover; background-position: center;"` : 'style="background-color: var(--border-color); display: flex; align-items: center; justify-content: center;"';
-
             const fechaArticulo = news.fecha || news.Fecha || news.FECHA || '';
 
             return `
@@ -449,9 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="news-body">
                         <span class="news-tag">${news.categoria || 'General'}</span>
-                        
                         ${fechaArticulo ? `<div class="news-date"><i class="far fa-calendar-alt"></i> ${fechaArticulo}</div>` : ''}
-                        
                         <h3>${news.titulo || 'Sin Título'}</h3>
                         <p>${news.extracto || ''}</p>
                         <a href="#" class="news-link" onclick="event.preventDefault(); showSection('noticia-detalle', ${news.id});">
@@ -543,13 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
             breadcrumb.appendChild(backLink);
             articleContainer.appendChild(breadcrumb);
 
-            // Cambiar únicamente el bloque de renderizado de imagen dentro de loadArticleDetail:
             if (article.imagen) {
                 const img = document.createElement('img');
-
-                // 🌟 DETECCIÓN INTELIGENTE DE URL PARA EL DETALLE
                 img.src = /^https?:\/\//i.test(article.imagen) ? article.imagen : `assets/noticias/${article.imagen}`;
-
                 img.alt = article.titulo || 'Imagen';
                 img.className = 'article-image';
                 articleContainer.appendChild(img);
@@ -644,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!anuncios || anuncios.length === 0) {
             container.innerHTML = `
                 <div class="ad-empty-state">
-                    <h3>Anuncios proximamente</h3>
+                    <h3>Anuncios próximamente</h3>
                     <p>Apoyamos a toda la comunidad.</p>
                 </div>
             `;
@@ -687,66 +605,53 @@ document.addEventListener('DOMContentLoaded', () => {
         return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
     }
 
-    // ==========================================
-    // SISTEMA DE PROGRAMACIÓN DINÁMICA
-    // ==========================================
-    function mergeScheduleData() {
-        const programasMap = {};
-        programasData.forEach(p => { programasMap[p.id] = p; });
-        scheduleData = programacionData.map(item => ({
-            ...item,
-            ...(programasMap[item.programa_id] || {})
-        }));
-    }
+    // =========================================================================
+    // LÓGICA DE DETECCIÓN INTELIGENTE DE HORARIOS DESDE EL HTML ESTÁTICO
+    // =========================================================================
+    function getStaticProgramsFromDOM() {
+        const cards = document.querySelectorAll('.schedule-grid .schedule-card');
+        const programs = [];
 
-    function renderSchedule() {
-        const container = document.querySelector('.schedule-grid');
-        if (!container) return;
+        cards.forEach((card, index) => {
+            const startStr = card.getAttribute('data-start');
+            const endStr = card.getAttribute('data-end');
+            const nombre = card.querySelector('h3')?.textContent || 'Programa Especial';
+            const descripcion = card.querySelector('p')?.textContent || '';
+            const rawTimeRange = card.querySelector('.schedule-time')?.textContent || '';
 
-        container.innerHTML = scheduleData.map((item, index) => {
-            // 🌟 APLICAMOS EL MISMO BLINDAJE VISUAL AQUÍ
-            const nombre = item.nombre || item.programa || item.Programa || 'Programa Especial';
-            const inicio = item.inicio || item.Hora_Inicio || item.inicio_hora || '--:--';
-            const fin = item.fin || item.Hora_Fin || item.fin_hora || '--:--';
-            const descripcion = item.descripcion || item.Descripcion || item.extracto || '';
-            const icono = item.icono || item.Icono || 'fa-clock';
-
-            return `
-                <div class="schedule-card" data-index="${index}" data-start="${inicio}" data-end="${fin}">
-                    <span class="time"><i class="fas ${icono}"></i> ${inicio} - ${fin}</span>
-                    <h3>${nombre}</h3>
-                    <p>${descripcion}</p>
-                </div>
-            `;
-        }).join('');
-
-        // 🌟 LA CLAVE: Forzar a que la tarjeta destacada "AL AIRE" se llene tras armar la grilla
-        updateLiveSchedule();
+            if (startStr && endStr) {
+                programs.push({
+                    index,
+                    nombre,
+                    descripcion,
+                    inicio: startStr.trim(),
+                    fin: endStr.trim(),
+                    rawTimeRange,
+                    element: card
+                });
+            }
+        });
+        return programs;
     }
 
     function isCurrentProgram(currentMinutes, startMinutes, endMinutes) {
-        if (endMinutes < startMinutes) {
+        if (endMinutes < startMinutes) { // Soporte para programas que cruzan la medianoche
             return (currentMinutes >= startMinutes || currentMinutes < endMinutes);
         }
         return (currentMinutes >= startMinutes && currentMinutes < endMinutes);
     }
 
-    function getCurrentProgram() {
-        if (!scheduleData || scheduleData.length === 0) return null;
+    function getCurrentProgramFromHTML() {
+        const programs = getStaticProgramsFromDOM();
+        if (programs.length === 0) return null;
+
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-        for (let i = 0; i < scheduleData.length; i++) {
-            const p = scheduleData[i];
-
-            // 🌟 Blindaje adaptativo de propiedades horarias
-            const horaInicio = p.inicio || p.Hora_Inicio || p.inicio_hora;
-            const horaFin = p.fin || p.Hora_Fin || p.fin_hora;
-
-            if (!horaInicio || !horaFin) continue;
-
-            const [startHour, startMinute] = horaInicio.split(':').map(Number);
-            const [endHour, endMinute] = horaFin.split(':').map(Number);
+        for (let i = 0; i < programs.length; i++) {
+            const p = programs[i];
+            const [startHour, startMinute] = p.inicio.split(':').map(Number);
+            const [endHour, endMinute] = p.fin.split(':').map(Number);
 
             if (isCurrentProgram(currentMinutes, startHour * 60 + startMinute, endHour * 60 + endMinute)) {
                 return p;
@@ -755,37 +660,66 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    function getNextProgram() {
-        if (!scheduleData || scheduleData.length === 0) return null;
-        const now = new Date();
-        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    function getNextProgramFromHTML() {
+        const programs = getStaticProgramsFromDOM();
+        if (programs.length === 0) return null;
 
-        for (let i = 0; i < scheduleData.length; i++) {
-            const p = scheduleData[i];
+        const current = getCurrentProgramFromHTML();
+        if (!current) return programs[0]; // Si no hay nada al aire, sugerimos el primero de la grilla
 
-            // 🌟 Blindaje adaptativo de propiedades horarias
-            const horaInicio = p.inicio || p.Hora_Inicio || p.inicio_hora;
-            const horaFin = p.fin || p.Hora_Fin || p.fin_hora;
-
-            if (!horaInicio || !horaFin) continue;
-
-            const [startHour, startMinute] = horaInicio.split(':').map(Number);
-            const [endHour, endMinute] = horaFin.split(':').map(Number);
-
-            if (isCurrentProgram(currentMinutes, startHour * 60 + startMinute, endHour * 60 + endMinute)) {
-                return scheduleData[i + 1] || scheduleData[0];
-            }
-        }
-        return null;
+        const nextIndex = (current.index + 1) % programs.length;
+        return programs[nextIndex];
     }
 
     // =========================================================================
-    // 1. WIDGET DE RESUMEN (RANKING MUSICAL) - CORREGIDO PROPIEDADES
+    // CONTROL MASTER DE PROGRAMA AL AIRE (GRILLA ESTÁTICA + PORTADA)
+    // =========================================================================
+    function updateLiveSchedule() {
+        // 1. Limpiamos cualquier clase "current" o insignias previas en el DOM
+        const cards = document.querySelectorAll('.schedule-grid .schedule-card');
+        cards.forEach(card => {
+            card.classList.remove('current');
+            const badge = card.querySelector('.current-badge');
+            if (badge) badge.remove();
+        });
+
+        // 2. Buscamos el programa que corresponde a esta hora
+        const currentShow = getCurrentProgramFromHTML();
+
+        if (currentShow) {
+            // Marcamos visualmente su tarjeta en la grilla estática
+            const activeCard = currentShow.element;
+            if (activeCard) {
+                activeCard.classList.add('current');
+                const badge = document.createElement('span');
+                badge.className = 'current-badge';
+                badge.textContent = 'Al Aire';
+                activeCard.appendChild(badge);
+            }
+        }
+
+        // 3. Actualizamos la sección "Explora" en el Inicio
+        const elTitle = document.getElementById("explore-onair");
+        const elTime = document.getElementById("explore-onair-time");
+        const elDesc = document.getElementById("explore-onair-desc");
+
+        if (currentShow) {
+            if (elTitle) elTitle.textContent = currentShow.nombre;
+            if (elTime) elTime.textContent = currentShow.rawTimeRange || `${currentShow.inicio} - ${currentShow.fin}`;
+            if (elDesc) elDesc.textContent = currentShow.descripcion;
+        } else {
+            if (elTitle) elTitle.textContent = "Música de Continuidad";
+            if (elTime) elTime.textContent = "--:-- - --:--";
+            if (elDesc) elDesc.textContent = "Disfruta de la mejor selección musical de Radio PSJ.";
+        }
+    }
+
+    // =========================================================================
+    // WIDGET DE RESUMEN (RANKING MUSICAL)
     // =========================================================================
     function updateSonandoWidget() {
         if (!window.appData.ranking || window.appData.ranking.length === 0) return;
 
-        // Ordenamos el ranking asegurando que lea 'votos' o 'Votos'
         const topTrack = [...window.appData.ranking].sort((a, b) => {
             const votosA = Number(a.votos || a.Votos || 0);
             const votosB = Number(b.votos || b.Votos || 0);
@@ -797,7 +731,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!topTrack) return;
 
-        // Extraemos las variables soportando mayúsculas y minúsculas de Sheets
         const cancion = topTrack.cancion || topTrack.Cancion || topTrack.CANCION || 'Canción';
         const artista = topTrack.artista || topTrack.Artista || topTrack.ARTISTA || 'Artista';
         const votos = topTrack.votos || topTrack.Votos || topTrack.VOTOS || 0;
@@ -815,114 +748,13 @@ document.addEventListener('DOMContentLoaded', () => {
             imgEl.src = `assets/covers/${cover}`;
             imgEl.alt = `${cancion} - ${artista}`;
         }
-
-        console.log(`🎵 Widget Sonando actualizado con el #1 real: ${cancion}`);
     }
 
     // =========================================================================
-    // 2. WIDGET REPRODUCTOR DE RADIO (CONEXIÓN NATIVA)
-    // =========================================================================
-    function updateWidgetSchedule(currentShow) {
-        const widgetShowName = document.getElementById('widgetShowName');
-        const widgetShowTime = document.getElementById('widgetShowTime');
-
-        if (!widgetShowName || !widgetShowTime) return;
-
-        if (currentShow) {
-            const nombre = currentShow.nombre || currentShow.programa || currentShow.Programa || "Programa Especial";
-            const inicio = currentShow.inicio || currentShow.Hora_Inicio || "--:--";
-            const fin = currentShow.fin || currentShow.Hora_Fin || "--:--";
-
-            widgetShowName.textContent = nombre;
-            widgetShowTime.textContent = `${inicio} - ${fin}`;
-        } else {
-            widgetShowName.textContent = 'Sin programación';
-            widgetShowTime.textContent = '--:-- - --:--';
-        }
-    }
-
-    // =========================================================================
-    // CONTROL MASTER DE PROGRAMA AL AIRE (GRILLA ORIGINAL + PORTADA + WIDGET)
-    // =========================================================================
-
-    function updateLiveSchedule() {
-        const now = new Date();
-        const currentMinutes = now.getHours() * 60 + now.getMinutes();
-        let currentShow = null;
-
-        // 1. LÓGICA ORIGINAL RESTAURADA: Limpiar la grilla de programas
-        document.querySelectorAll('.schedule-card').forEach(card => {
-            card.classList.remove('current');
-            const badge = card.querySelector('.current-badge');
-            if (badge) badge.remove();
-        });
-
-        // 2. Buscar el programa actual e iluminar su tarjeta en la grilla
-        if (scheduleData && scheduleData.length > 0) {
-            scheduleData.forEach((programa, index) => {
-
-                // Blindaje para soportar minúsculas o mayúsculas de Sheets
-                const horaInicio = programa.inicio || programa.Hora_Inicio || "--:--";
-                const horaFin = programa.fin || programa.Hora_Fin || "--:--";
-
-                if (horaInicio === "--:--" || horaFin === "--:--") return;
-
-                const [startHour, startMinute] = horaInicio.split(':').map(Number);
-                const [endHour, endMinute] = horaFin.split(':').map(Number);
-
-                const startMinutes = startHour * 60 + startMinute;
-                const endMinutes = endHour * 60 + endMinute;
-
-                const active = isCurrentProgram(currentMinutes, startMinutes, endMinutes);
-
-                if (!active) return;
-
-                // Si está al aire, lo guardamos y modificamos su tarjeta HTML
-                currentShow = programa;
-
-                const card = document.querySelectorAll('.schedule-card')[index];
-                if (!card) return;
-
-                card.classList.add('current');
-
-                const badge = document.createElement('span');
-                badge.className = 'current-badge';
-                badge.textContent = 'Al Aire';
-                card.appendChild(badge);
-            });
-        }
-
-        // 3. ACTUALIZAR LA PORTADA (Sección Explora / Home)
-        const elTitle = document.getElementById("explore-onair");
-        const elTime = document.getElementById("explore-onair-time");
-        const elDesc = document.getElementById("explore-onair-desc");
-
-        if (currentShow) {
-            const nombreShow = currentShow.nombre || currentShow.programa || currentShow.Programa || "Programa Especial";
-            const hInicio = currentShow.inicio || currentShow.Hora_Inicio || "--:--";
-            const hFin = currentShow.fin || currentShow.Hora_Fin || "--:--";
-            const descShow = currentShow.descripcion || currentShow.extracto || currentShow.Descripcion || "Sintoniza nuestra señal en vivo.";
-
-            if (elTitle) elTitle.textContent = nombreShow;
-            if (elTime) elTime.textContent = `${hInicio} - ${hFin}`;
-            if (elDesc) elDesc.textContent = descShow;
-        } else {
-            if (elTitle) elTitle.textContent = "Música de Continuidad";
-            if (elTime) elTime.textContent = "--:-- - --:--";
-            if (elDesc) elDesc.textContent = "Disfruta de la mejor selección musical de Neptuno.";
-        }
-
-        // 4. ACTUALIZAR EL REPRODUCTOR FLOTANTE
-        updateWidgetSchedule(currentShow);
-    }
-
-
-    // =========================================================================
-    // REPRODUCTOR AUDIO (ZENO RADIO) Y MENÚ RESPONSIVE
+    // MENÚ RESPONSIVE (MÓVIL)
     // =========================================================================
     const menuToggle = document.getElementById('menuToggle');
     const mainNav = document.getElementById('mainNav');
-    const audio = document.getElementById('zenoAudio');
 
     if (menuToggle && mainNav) {
         menuToggle.addEventListener('click', () => {
@@ -945,7 +777,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-
 
     // DISPARO INICIAL INTEGRAL
     initData();

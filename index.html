@@ -95,29 +95,55 @@
         <!-- Sección Widgets Datos Publicos -->
 
 
-        <!-- Sección Explora (solo visible en inicio) -->
+        <!-- Sección Explora (Resumen de Programas en Formato Lista) -->
         <section class="explore-section view-section" id="explora">
             <div class="section-container">
                 <div class="explore-grid">
 
+                    <!-- Tarjeta: Lista de Programas de la Radio -->
                     <a href="#" data-section="programacion" class="explore-card">
                         <div class="explore-card-top">
                             <div>
-                                <h3>Programación</h3>
-                                <p>Conoce nuestra parrilla</p>
+                                <h3>Nuestros Programas</h3>
+                                <p>Descubre lo que suena en PSJ</p>
                             </div>
                             <i class="fas fa-calendar-alt"></i>
                         </div>
-                        <div class="explore-card-bottom">
-                            <span class="card-label">AL AIRE</span>
-                            <div id="explore-onair">
-                                <strong>Cargando...</strong>
-                            </div>
-                            <div id="explore-onair-time" class="explore-card-time"></div>
-                            <p id="explore-onair-desc" class="explore-card-desc"></p>
+                        <div class="explore-card-bottom static-onair-schedule">
+                            <span class="card-label">PARRILLA DE PROGRAMAS</span>
+                            
+                            <ul class="mini-program-list">
+                                <li>
+                                    <i class="fas fa-flag-checkered program-list-icon"></i>
+                                    <span class="program-list-name">Pit Stop</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-gamepad program-list-icon"></i>
+                                    <span class="program-list-name">Zona Geek</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-newspaper program-list-icon"></i>
+                                    <span class="program-list-name">Patrocinio al Día</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-calendar-check program-list-icon"></i>
+                                    <span class="program-list-name">Efemérides del Día</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-soccer-ball program-list-icon"></i>
+                                    <span class="program-list-name">A Cancha Abierta</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-flask program-list-icon"></i>
+                                    <span class="program-list-name">PSJ Lab</span>
+                                </li>
+                            </ul>
+                            
+                            <p class="explore-card-action">Ver días, horarios y detalles <i class="fas fa-arrow-right"></i></p>
                         </div>
                     </a>
 
+                    <!-- Tarjeta: Noticias (Mantiene integración dinámica con Sheets) -->
                     <a href="#" data-section="noticias" class="explore-card">
                         <div class="explore-card-top">
                             <div>
@@ -128,15 +154,12 @@
                         </div>
                         <div class="explore-card-bottom">
                             <span class="card-label">ÚLTIMA NOTICIA</span>
-                            <img id="explore-news-image" class="explore-thumb" src="assets/default-news.jpg"
-                                alt="Noticia">
+                            <img id="explore-news-image" class="explore-thumb" src="assets/default-news.jpg" alt="Noticia">
                             <div id="explore-news-title">
-                                Cargando...
+                                Cargando última publicación...
                             </div>
                         </div>
                     </a>
-
-
 
                 </div>
             </div>
@@ -158,7 +181,7 @@
             </div>
         </section>
 
-        <!-- VISTA: PROGRAMAS -->
+        <!-- VISTA: PROGRAMAS (Estatico y facil de editar) -->
         <section id="programacion" class="schedule-section view-section">
             <div class="section-container">
 
@@ -166,7 +189,93 @@
                 <p class="section-subtitle">Conoce nuestra parrilla de programación y horarios</p>
 
                 <div class="schedule-grid">
-                    <!-- Programas cargados dinámicamente -->
+                    
+                    <!-- Tarjeta de Programa 1 -->
+                    <div class="schedule-card">
+                        <div class="schedule-icon-container">
+                            <i class="fas fa-flag-checkered"></i> <!-- Ícono del programa -->
+                        </div>
+                        <div class="schedule-info">
+                            <h3>Pit Stop</h3>
+                            <span class="schedule-days">Lunes y Viernes</span>
+                            <span class="schedule-time">09:35 a 09:40</span>
+                            
+                            <p>Un microprograma de alta velocidad con el resumen de las principales novedades del mundo motor, rally y automovilismo internacional.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Programa 2 -->
+                    <div class="schedule-card">
+                        <div class="schedule-icon-container">
+                            <i class="fas fa-gamepad"></i> <!-- Ícono del programa -->
+                        </div>
+                        <div class="schedule-info">
+                            <h3>Zona Geek</h3>
+                            <span class="schedule-days">Lunes y Miércoles</span>
+                            <span class="schedule-time">11:25 a 11:35</span>
+                            
+                            <p>El espacio dedicado a la cultura pop, las últimas novedades de la industria de los videojuegos, reseñas de anime, tendencias tecnológicas y lanzamientos.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Programa 3 -->
+                    <div class="schedule-card">
+                        <div class="schedule-icon-container">
+                            <i class="fas fa-newspaper"></i> <!-- Ícono del programa -->
+                        </div>
+                        <div class="schedule-info">
+                            <h3>Patrocinio al Día</h3>
+                            <span class="schedule-days">Lunes, Martes y Jueves</span>
+                            <span class="schedule-time">13:20 a 13:50 - 11:25 a 11:40 (Viernes)</span>
+                            
+                            <p>Un espacio de debate, opinión y análisis noticioso con la actualidad escolar, sirviendo como voz para difundir todas las actividades y novedades del colegio.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Programa 4 -->
+                    <div class="schedule-card">
+                        <div class="schedule-icon-container">
+                            <i class="fas fa-calendar-check"></i> <!-- Ícono del programa -->
+                        </div>
+                        <div class="schedule-info"> <!-- Estructura común sin ícono si prefieres variar -->
+                            <h3>Efemérides del Día</h3>
+                            <span class="schedule-days">Miércoles y Jueves</span>
+                            <span class="schedule-time">9:35 a 9:45</span>
+                            
+                            <p>Un repaso dinámico por los acontecimientos históricos, curiosidades y fechas importantes ocurridas un día como hoy en Chile y el mundo.</p>
+                        </div>
+                    </div>
+
+
+                    <!-- Tarjeta de Programa 4 -->
+                    <div class="schedule-card">
+                        <div class="schedule-icon-container">
+                            <i class="fas fa-soccer-ball"></i> <!-- Ícono del programa -->
+                        </div>
+                        <div class="schedule-info"> <!-- Estructura común sin ícono si prefieres variar -->
+                            <h3>A Cancha Abierta</h3>
+                            <span class="schedule-days">Miércoles y Viernes</span>
+                            <span class="schedule-time">14:20 a 15:20</span>
+                            
+                            <p>Panel deportivo de debate y análisis enfocado en el fútbol nacional e internacional, campeonatos de colegio, talleres deportivos y actividad física escolar.</p>
+                        </div>
+                    </div>
+
+
+                    <!-- Tarjeta de Programa 4 -->
+                    <div class="schedule-card">
+                        <div class="schedule-icon-container">
+                            <i class="fas fa-flask"></i> <!-- Ícono del programa -->
+                        </div>
+                        <div class="schedule-info"> <!-- Estructura común sin ícono si prefieres variar -->
+                            <h3>PSJ Lab</h3>
+                            <span class="schedule-days">Jueves</span>
+                            <span class="schedule-time">11:25 a 11:40</span>
+                            
+                            <p>El rincón de la ciencia y la tecnología, avances de la investigación y la innovación, trabajos desarrollados en las asignaturas y talleres científicos de nuestro establecimiento.</p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </section>
